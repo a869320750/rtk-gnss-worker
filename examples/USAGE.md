@@ -13,7 +13,7 @@ python examples/run_gnss_worker.py
 - 自动加载 `config.json` 配置文件
 - 连接到NTRIP服务器 (220.180.239.212:7990)
 - 读取GNSS数据并输出到 `/tmp/gnss_location.json`
-- 在终端显示实时位置信息
+- 在终端显示实时位置信息 
 
 ### 方式2: 使用环境变量配置
 
