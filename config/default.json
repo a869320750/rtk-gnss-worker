@@ -1,0 +1,23 @@
+{
+  "ntrip": {
+    "server": "220.180.239.212",
+    "port": 7990,
+    "username": "QL_NTRIP",
+    "password": "123456",
+    "mountpoint": "HeFei",
+    "timeout": 30.0
+  },
+  "serial": {
+    "port": "/dev/ttyUSB0",
+    "baudrate": 115200,
+    "timeout": 1.0
+  },
+  "output": {
+    "type": "file",
+    "file_path": "/tmp/gnss_location.json",
+    "atomic_write": true
+  },
+  "logging": {
+    "level": "INFO"
+  }
+}

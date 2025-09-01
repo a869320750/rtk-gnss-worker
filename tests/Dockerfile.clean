@@ -1,0 +1,25 @@
+FROM python:3.11.6-slim
+
+WORKDIR /app
+
+# 安装系统依赖
+RUN apt-get update && apt-get install -y \
+    gcc \
+    netcat-traditional \
+    && rm -rf /var/lib/apt/lists/*
+
+# 复制requirements文件并安装依赖
+COPY requirements.txt .
+RUN pip install --no-cache-dir -r requirements.txt
+
+# 安装测试依赖
+RUN pip install pytest pytest-cov pytest-mock pytest-html pytest-json-report
+
+# 设置Python路径
+ENV PYTHONPATH=/app/src
+
+# 设置工作目录
+WORKDIR /app
+
+# 不设置ENTRYPOINT，让docker-compose来指定具体的命令
+# 这样所有业务逻辑都通过volume映射，实现真正的代码与环境分离

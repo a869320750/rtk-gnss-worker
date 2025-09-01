@@ -1,0 +1,39 @@
+{
+    "rtk": {
+        "ntrip": {
+            "server": "120.253.226.97",
+            "port": 8002,
+            "username": "cvhd7823",
+            "password": "n8j5c88f",
+            "mountpoint": "RTCM33_GRCEJ",
+            "timeout": 15,
+            "reconnect_interval": 5,
+            "max_retries": 2
+        },
+        "serial": {
+            "port": "/tmp/ttyGNSS1",
+            "baudrate": 115200,
+            "timeout": 1.0,
+            "host": null,
+            "comment": "如果设置了host，则使用TCP连接而不是串口"
+        },
+        "output": {
+            "type": "file",
+            "file_path": "./gnss_location.json",
+            "atomic_write": true,
+            "update_interval": 1.0
+        },
+        "logging": {
+            "level": "INFO",
+            "file": "./rtk-gnss-worker.log",
+            "max_size": "10MB",
+            "backup_count": 5
+        },
+        "positioning": {
+            "min_satellites": 4,
+            "min_quality": 1,
+            "gga_interval": 30,
+            "position_timeout": 60
+        }
+    }
+}

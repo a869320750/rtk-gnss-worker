@@ -1,0 +1,183 @@
+services:
+  # 统一基础镜像（纯环境，不含业务代码）
+  rtk-base:
+    build:
+      context: ..
+      dockerfile: tests/Dockerfile.clean
+    image: rtk-gnss-worker:clean
+
+  # NTRIP模拟服务
+  ntrip-mock:
+    extends: rtk-base
+    command: ["/app/tests/entrypoint.sh", "ntrip-mock"]
+    volumes:
+      - ..:/app  # 映射项目根目录
+    working_dir: /app
+    ports:
+      - "2101:2101"
+      - "2102:2102"
+    healthcheck:
+      test: ["CMD", "python", "-c", "import socket; s=socket.socket(); s.settimeout(1); s.connect(('localhost', 2102)); s.close()"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+    networks:
+      - rtk-test-network
+
+  # 串口模拟服务
+  serial-mock:
+    extends: rtk-base
+    command: ["/app/tests/entrypoint.sh", "serial-mock"]
+    volumes:
+      - ..:/app  # 映射项目根目录
+    working_dir: /app
+    ports:
+      - "8888:8888"
+      - "8889:8889"
+    healthcheck:
+      test: ["CMD", "python", "-c", "import socket; s=socket.socket(); s.settimeout(1); s.connect(('localhost', 8889)); s.close()"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+    networks:
+      - rtk-test-network
+
+  # 单元测试
+  test-unit:
+    extends: rtk-base
+    command: ["/app/tests/entrypoint.sh", "test-unit"]
+    volumes:
+      - ..:/app  # 映射整个项目根目录
+    working_dir: /app
+    environment:
+      - PYTHONPATH=/app/src
+    networks:
+      - rtk-test-network
+
+  # 集成测试
+  test-integration:
+    extends: rtk-base
+    command: ["/app/tests/entrypoint.sh", "test-integration"]
+    volumes:
+      - ..:/app
+    working_dir: /app
+    depends_on:
+      ntrip-mock:
+        condition: service_healthy
+      serial-mock:
+        condition: service_healthy
+    environment:
+      - PYTHONPATH=/app/src
+      - GNSS_NTRIP_SERVER=ntrip-mock
+      - GNSS_NTRIP_PORT=2101
+      - GNSS_NTRIP_USERNAME=test
+      - GNSS_NTRIP_PASSWORD=test
+      - GNSS_NTRIP_MOUNTPOINT=RTCM3
+      - GNSS_SERIAL_HOST=serial-mock
+      - GNSS_SERIAL_PORT=8888
+      - GNSS_OUTPUT_FILE=/tmp/gnss_location.json
+      - GNSS_LOG_LEVEL=DEBUG
+    networks:
+      - rtk-test-network
+
+  # 真实端到端集成测试
+  test-real-integration:
+    extends: rtk-base
+    command: ["/app/tests/entrypoint.sh", "test-real-integration"]
+    volumes:
+      - ..:/app
+    working_dir: /app
+    depends_on:
+      ntrip-mock:
+        condition: service_healthy
+      serial-mock:
+        condition: service_healthy
+    environment:
+      - PYTHONPATH=/app/src
+      - GNSS_NTRIP_SERVER=ntrip-mock
+      - GNSS_NTRIP_PORT=2101
+      - GNSS_SERIAL_HOST=serial-mock
+      - GNSS_SERIAL_PORT=8888
+    networks:
+      - rtk-test-network
+
+  # 系统测试
+  test-system:
+    extends: rtk-base
+    command: ["/app/tests/entrypoint.sh", "test-system"]
+    volumes:
+      - ..:/app
+    working_dir: /app
+    depends_on:
+      ntrip-mock:
+        condition: service_healthy
+      serial-mock:
+        condition: service_healthy
+    environment:
+      - PYTHONPATH=/app/src
+      - GNSS_NTRIP_SERVER=ntrip-mock
+      - GNSS_NTRIP_PORT=2101
+      - GNSS_NTRIP_USERNAME=test
+      - GNSS_NTRIP_PASSWORD=test
+      - GNSS_NTRIP_MOUNTPOINT=RTCM3
+      - GNSS_SERIAL_HOST=serial-mock
+      - GNSS_SERIAL_PORT=8888
+      - GNSS_OUTPUT_FILE=/tmp/gnss_location.json
+      - GNSS_LOG_LEVEL=DEBUG
+    networks:
+      - rtk-test-network
+
+  # 架构测试
+  test-architecture:
+    extends: rtk-base
+    command: ["/app/tests/entrypoint.sh", "test-architecture"]
+    volumes:
+      - ..:/app
+    working_dir: /app
+    depends_on:
+      ntrip-mock:
+        condition: service_healthy
+      serial-mock:
+        condition: service_healthy
+    environment:
+      - PYTHONPATH=/app/src
+      - GNSS_NTRIP_SERVER=ntrip-mock
+      - GNSS_NTRIP_PORT=2101
+      - GNSS_NTRIP_USERNAME=test
+      - GNSS_NTRIP_PASSWORD=test
+      - GNSS_NTRIP_MOUNTPOINT=RTCM3
+      - GNSS_SERIAL_HOST=serial-mock
+      - GNSS_SERIAL_PORT=8888
+      - GNSS_OUTPUT_FILE=/tmp/gnss_location.json
+      - GNSS_LOG_LEVEL=DEBUG
+    networks:
+      - rtk-test-network
+
+  # GNSS Worker应用
+  gnss-worker:
+    extends: rtk-base
+    command: ["/app/tests/entrypoint.sh", "gnss-worker"]
+    volumes:
+      - ..:/app  # 映射整个项目根目录
+      - ./output:/tmp
+      - ./logs:/var/log
+    depends_on:
+      ntrip-mock:
+        condition: service_healthy
+      serial-mock:
+        condition: service_healthy
+    environment:
+      # 不使用配置文件，完全依赖环境变量
+      - GNSS_NTRIP_SERVER=ntrip-mock
+      - GNSS_NTRIP_PORT=2101
+      - GNSS_NTRIP_MOUNTPOINT=RTCM3
+      - GNSS_NTRIP_USERNAME=test
+      - GNSS_NTRIP_PASSWORD=test
+      - GNSS_SERIAL_HOST=serial-mock
+      - GNSS_SERIAL_PORT=8888
+    networks:
+      - rtk-test-network
+
+networks:
+  rtk-test-network:
+    driver: bridge
