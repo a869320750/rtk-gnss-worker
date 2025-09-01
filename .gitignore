@@ -7,6 +7,7 @@ LMB_TEST/bin/*
 
 # Python缓存
 __pycache__/
+.pytest_cache/
 *.pyc
 *.pyo
 *.pyd
